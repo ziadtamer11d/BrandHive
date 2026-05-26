@@ -10,6 +10,55 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+const getResponseArray = (response) =>
+  response.data?.data ||
+  response.data?.products ||
+  response.data?.items ||
+  (Array.isArray(response.data) ? response.data : []);
+
+const getPublicProducts = (params = {}) => api.get('/search/products', {
+  params: {
+    page: params.page || 1,
+    limit: params.limit || 100,
+    ...(params.search ? { search: params.search } : {}),
+    ...(params.category ? { category: params.category } : {}),
+    ...(params.brand ? { brand: params.brand } : {}),
+  },
+});
+
+const findPublicProduct = async (identifier) => {
+  const limit = 100;
+  let page = 1;
+  let totalPages = 1;
+
+  do {
+    const response = await getPublicProducts({ page, limit });
+    const products = getResponseArray(response);
+    const found = products.find((product) => {
+      const id = product.id || product._id;
+      return id === identifier || product.slug === identifier;
+    });
+
+    if (found) {
+      return {
+        ...response,
+        data: {
+          ...response.data,
+          data: found,
+          product: found,
+        },
+      };
+    }
+
+    totalPages = response.data?.meta?.totalPages || totalPages;
+    page += 1;
+  } while (page <= totalPages);
+
+  const error = new Error('Product not found');
+  error.response = { status: 404, data: { message: 'Product not found' } };
+  throw error;
+};
+
 // ─── Request Interceptor: attach JWT ─────────────────────────────────────────
 api.interceptors.request.use(
   (config) => {
@@ -144,21 +193,27 @@ export const brandsAPI = {
 
 // ─── Products — backend returns empty; keep using mockData ───────────────────
 export const productsAPI = {
-  getAll: (params = {}) => api.get('/product', { 
-    params: { 
-      page: params.page || 1, 
-      limit: params.limit || 100,
-    } 
-  }),
-  getOne: (slug) => api.get(`/product/${slug}`),
+  // The public product controller is protected on the live API, while search is public.
+  // Use search for browsing and fall back to it for details so PLP/PDP work without auth.
+  getAll: (params = {}) => getPublicProducts(params),
+  getOne: async (slug) => {
+    try {
+      return await api.get(`/product/${slug}`);
+    } catch (error) {
+      if ([401, 403, 404].includes(error.response?.status)) {
+        return findPublicProduct(slug);
+      }
+      throw error;
+    }
+  },
   getTrending: () => api.get('/product/trending'),
   getNewArrivals: () => api.get('/product/new-arrivals'),
   getByBrand: (brandId) => 
-    api.get(`/product/by-brand/${brandId}`),
+    getPublicProducts({ brand: brandId, limit: 100 }),
   getByCategory: (categoryId) => 
-    api.get(`/product/by-category/${categoryId}`),
+    getPublicProducts({ category: categoryId, limit: 100 }),
   search: (params) => 
-    api.get('/search/products', { params }),
+    getPublicProducts(params),
 };
 
 // ─── Seller ──────────────────────────────────────────────────────────────────
