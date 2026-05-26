@@ -26,8 +26,45 @@ const getPublicProducts = (params = {}) => api.get('/search/products', {
   },
 });
 
+const getAllPublicProducts = async (params = {}) => {
+  const limit = params.limit || 100;
+  let page = params.page || 1;
+  let totalPages = 1;
+  const allProducts = [];
+  let firstResponse = null;
+
+  do {
+    const response = await getPublicProducts({ ...params, page, limit });
+    if (!firstResponse) firstResponse = response;
+
+    const products = getResponseArray(response);
+    if (Array.isArray(products)) {
+      allProducts.push(...products);
+    }
+
+    totalPages = response.data?.meta?.totalPages || response.data?.meta?.pages || totalPages;
+    page += 1;
+  } while (page <= totalPages);
+
+  return {
+    ...(firstResponse || {}),
+    data: {
+      ...(firstResponse?.data || {}),
+      data: allProducts,
+      products: allProducts,
+      meta: {
+        ...(firstResponse?.data?.meta || {}),
+        total: allProducts.length,
+        page: 1,
+        limit,
+        totalPages: 1,
+      },
+    },
+  };
+};
+
 const getPublicCategories = async () => {
-  const response = await getPublicProducts({ page: 1, limit: 100 });
+  const response = await getAllPublicProducts({ page: 1, limit: 100 });
   const products = getResponseArray(response);
   const categoryMap = new Map();
 
@@ -225,7 +262,7 @@ export const brandsAPI = {
 export const productsAPI = {
   // The public product controller is protected on the live API, while search is public.
   // Use search for browsing and fall back to it for details so PLP/PDP work without auth.
-  getAll: (params = {}) => getPublicProducts(params),
+  getAll: (params = {}) => getAllPublicProducts(params),
   getOne: (slug) => findPublicProduct(slug),
   getTrending: () => api.get('/product/trending'),
   getNewArrivals: () => api.get('/product/new-arrivals'),

@@ -86,7 +86,6 @@ export default function ListingPage() {
       const res = await productsAPI.getAll({
         page: 1,
         limit: 100,
-        search: searchParam,
       });
 
       // Handle all possible response shapes
