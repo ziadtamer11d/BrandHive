@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -43,6 +44,19 @@ function Layout({ children, noFooter = false }) {
       {!noFooter && <Footer />}
     </>
   );
+}
+
+function ScrollToTop() {
+  const { pathname, search } = useLocation();
+
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [pathname, search]);
+
+  return null;
 }
 
 function NotFoundPage() {
@@ -125,6 +139,7 @@ function AppWrapper() {
   const { isRTL } = useLanguage();
   return (
     <>
+      <ScrollToTop />
       <AppRoutes />
       <Toaster
         position={isRTL ? 'top-left' : 'top-right'}

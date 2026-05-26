@@ -69,14 +69,14 @@ export default function ProductCard({ product, size = 'md' }) {
   const isSmall = size === 'sm';
 
   return (
-    <Link to={productPath} className="card-product block">
+    <Link to={productPath} className="card-product group flex h-full flex-col">
       {/* Image */}
-      <div className={`relative product-img ${isSmall ? 'h-40' : 'h-52 md:h-60'} bg-gradient-to-br ${bgGradient} flex items-center justify-center overflow-hidden`}>
+      <div className={`relative ${isSmall ? 'h-40' : 'h-44 sm:h-52 md:h-60'} bg-gradient-to-br ${bgGradient} flex items-center justify-center overflow-hidden`}>
         {product.image ? (
           <img
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain bg-white/40 dark:bg-white/5 p-2"
             onError={(e) => {
               e.target.style.display = 'none';
               e.target.nextSibling.style.display = 'flex';
@@ -106,20 +106,21 @@ export default function ProductCard({ product, size = 'md' }) {
         {/* Wishlist Button */}
         <button
           onClick={handleWishlist}
-          className={`absolute top-2 ${isRTL ? 'left-2' : 'right-2'} p-1.5 rounded-full transition-all ${
+          aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+          className={`absolute top-2 ${isRTL ? 'left-2' : 'right-2'} z-20 flex h-9 w-9 items-center justify-center rounded-full transition-all ${
             wishlisted
               ? 'bg-red-500 text-white shadow-md scale-110'
-              : 'bg-white/90 text-gray-500 hover:bg-white hover:text-red-500 shadow-sm'
+              : 'bg-white text-gray-500 hover:text-red-500 shadow-md'
           }`}
         >
-          <Heart size={14} fill={wishlisted ? 'currentColor' : 'none'} />
+          <Heart size={17} fill={wishlisted ? 'currentColor' : 'none'} />
         </button>
 
         {/* Quick Add on Hover */}
-        <div className="absolute bottom-0 left-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0">
+        <div className="absolute bottom-0 left-0 right-0 p-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity sm:translate-y-2 sm:group-hover:translate-y-0">
           <button
             onClick={handleAddToCart}
-            className="w-full flex items-center justify-center gap-2 py-2 bg-brand-navy text-white text-xs font-semibold rounded-xl hover:bg-opacity-90 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2 bg-brand-navy/95 text-white text-xs font-semibold rounded-xl hover:bg-opacity-90 transition-colors dark:bg-brand-gold dark:text-brand-navy"
           >
             <ShoppingCart size={12} />
             {t('products.addToCart')}
@@ -128,7 +129,7 @@ export default function ProductCard({ product, size = 'md' }) {
       </div>
 
       {/* Info */}
-      <div className={`p-3 ${isSmall ? '' : 'p-4'} ${isRTL ? 'text-right' : 'text-left'}`}>
+      <div className={`flex flex-1 flex-col p-3 ${isSmall ? '' : 'sm:p-4'} ${isRTL ? 'text-right' : 'text-left'}`}>
         {/* Brand */}
         <div className={`flex items-center gap-1 mb-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <span className={`text-brand-gold text-xs font-semibold truncate`}>{product.brandName}</span>
@@ -136,7 +137,7 @@ export default function ProductCard({ product, size = 'md' }) {
         </div>
 
         {/* Name */}
-        <h3 className={`font-semibold text-gray-900 dark:text-dark-text line-clamp-2 leading-tight mb-2 ${isSmall ? 'text-xs' : 'text-sm'}`}>
+        <h3 className={`font-semibold text-gray-900 dark:text-dark-text line-clamp-2 leading-tight mb-2 min-h-[2.25rem] ${isSmall ? 'text-xs' : 'text-sm'}`}>
           {product.name}
         </h3>
 
@@ -155,11 +156,12 @@ export default function ProductCard({ product, size = 'md' }) {
         </div>
 
         {/* Price */}
-        <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+        <div className={`mt-auto flex items-end justify-between gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <div className={isRTL ? 'text-right' : 'text-left'}>
-            <span className={`font-bold text-brand-navy dark:text-brand-gold ${isSmall ? 'text-sm' : 'text-base'}`}>
-              {product.price.toLocaleString()} {t('common.egp')}
+            <span className={`block font-bold text-brand-navy dark:text-brand-gold ${isSmall ? 'text-sm' : 'text-base sm:text-lg'}`}>
+              {product.price.toLocaleString()}
             </span>
+            <span className="block text-xs font-semibold text-brand-navy/80 dark:text-brand-gold/80">{t('common.egp')}</span>
             {product.originalPrice && (
               <span className={`text-xs text-gray-400 dark:text-dark-muted line-through ${isRTL ? 'mr-1' : 'ml-1'}`}>
                 {product.originalPrice.toLocaleString()}
@@ -167,7 +169,7 @@ export default function ProductCard({ product, size = 'md' }) {
             )}
           </div>
           {product.freeShipping && (
-            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+            <span className="shrink-0 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
               {isRTL ? 'شحن مجاني' : 'Free ship'}
             </span>
           )}
