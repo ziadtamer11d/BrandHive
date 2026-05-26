@@ -303,8 +303,21 @@ export default function CartPage() {
                         item.category === 'Jewelry' ? 'bg-amber-50 dark:bg-amber-900/10' :
                         item.category === 'Fashion' ? 'bg-pink-50 dark:bg-pink-900/10' :
                         'bg-orange-50 dark:bg-orange-900/10'
-                      }`}>
-                        {icon}
+                      } overflow-hidden`}>
+                        {item.image ? (
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <span className={`${item.image ? 'hidden' : 'flex'} w-full h-full items-center justify-center`}>
+                          {icon}
+                        </span>
                       </div>
 
                       {/* Info */}

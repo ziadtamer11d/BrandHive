@@ -409,7 +409,7 @@ export default function ProductPage() {
             <div className={`flex gap-3 mb-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <button onClick={handleAddToCart} className={`flex-1 btn-outline flex items-center justify-center gap-2 py-3.5 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <ShoppingCart size={18} />
-                {t('cart.addToCart')}
+                {t('products.addToCart')}
               </button>
               <button onClick={handleBuyNow} className="flex-1 btn-primary flex items-center justify-center gap-2 py-3.5 bg-brand-gold hover:opacity-90 shadow-gold">
                 {isRTL ? 'شراء الآن' : 'Buy Now'}

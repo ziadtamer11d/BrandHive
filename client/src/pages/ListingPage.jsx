@@ -83,7 +83,11 @@ export default function ListingPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await productsAPI.getAll({ page: 1, limit: 100 });
+      const res = await productsAPI.getAll({
+        page: 1,
+        limit: 100,
+        search: searchParam,
+      });
 
       // Handle all possible response shapes
       const raw =
@@ -113,11 +117,9 @@ export default function ListingPage() {
     }
   };
 
-  // Only fetch once on mount — NO dependency array items
-  // Filtering is done by useMemo locally
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [searchParam]);
 
   // Use categoryParam directly for filtering
   // Real products have category.name from API

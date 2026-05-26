@@ -60,7 +60,7 @@ export const CartProvider = ({ children }) => {
           brandName: item.productId?.brand?.name || '',
           brandSlug: item.productId?.brand?.slug || '',
           category: item.productId?.category?.name || '',
-          image: item.productId?.images?.[0] || null,
+          image: item.productId?.mainImage || item.productId?.images?.[0] || item.image || null,
         }));
         setItems(mapped);
         localStorage.setItem(
