@@ -41,6 +41,7 @@ export default function ProductCard({ product, size = 'md' }) {
   const catKey = product.category?.toLowerCase().replace(/\s+/g, '-');
   const bgGradient = CATEGORY_COLORS[catKey] || CATEGORY_COLORS.default;
   const icon = CATEGORY_ICONS[catKey] || CATEGORY_ICONS.default;
+  const productPath = `/product/${encodeURIComponent(product.slug || product.id)}`;
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -68,7 +69,7 @@ export default function ProductCard({ product, size = 'md' }) {
   const isSmall = size === 'sm';
 
   return (
-    <Link to={`/product/${product.slug}`} className="card-product block">
+    <Link to={productPath} className="card-product block">
       {/* Image */}
       <div className={`relative product-img ${isSmall ? 'h-40' : 'h-52 md:h-60'} bg-gradient-to-br ${bgGradient} flex items-center justify-center overflow-hidden`}>
         {product.image ? (

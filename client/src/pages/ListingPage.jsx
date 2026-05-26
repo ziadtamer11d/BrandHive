@@ -24,6 +24,26 @@ function FilterSection({ title, children, defaultOpen = true, isRTL }) {
   );
 }
 
+const CATEGORY_ALIASES = {
+  handmade: ['handmade', 'handicrafts', 'hand craft', 'hand-made'],
+  handicrafts: ['handmade', 'handicrafts', 'hand craft', 'hand-made'],
+  jewelry: ['jewelry', 'accessories'],
+  accessories: ['jewelry', 'accessories'],
+  fashion: ['fashion', 'accessories'],
+  decor: ['decor', 'home-decor', 'home decor'],
+  'home-decor': ['decor', 'home-decor', 'home decor'],
+  art: ['art', 'art-culture', 'art & culture'],
+  'art-culture': ['art', 'art-culture', 'art & culture'],
+};
+
+const normalizeCategory = (value = '') =>
+  value.toLowerCase().trim().replace(/_/g, '-');
+
+const getCategoryTerms = (category) => {
+  const normalized = normalizeCategory(category);
+  return CATEGORY_ALIASES[normalized] || [normalized];
+};
+
 export default function ListingPage() {
   const { t } = useTranslation();
   const { isRTL } = useLanguage();
@@ -127,12 +147,21 @@ export default function ListingPage() {
 
     // Category filter — flexible matching
     if (activeCategory && categoryParam) {
-      result = result.filter(p =>
-        (p.category || '').toLowerCase()
-          .includes(categoryParam.toLowerCase()) ||
-        (p.categorySlug || '').toLowerCase()
-          .includes(categoryParam.toLowerCase())
-      );
+      const terms = getCategoryTerms(categoryParam);
+      result = result.filter(p => {
+        const categoryName = normalizeCategory(p.category);
+        const categorySlug = normalizeCategory(p.categorySlug);
+
+        return terms.some(term => {
+          const normalizedTerm = normalizeCategory(term);
+          return (
+            categoryName.includes(normalizedTerm) ||
+            categorySlug.includes(normalizedTerm) ||
+            normalizedTerm.includes(categoryName) ||
+            normalizedTerm.includes(categorySlug)
+          );
+        });
+      });
     }
 
     // Price filters

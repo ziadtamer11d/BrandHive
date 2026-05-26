@@ -26,6 +26,36 @@ const getPublicProducts = (params = {}) => api.get('/search/products', {
   },
 });
 
+const getPublicCategories = async () => {
+  const response = await getPublicProducts({ page: 1, limit: 100 });
+  const products = getResponseArray(response);
+  const categoryMap = new Map();
+
+  products.forEach((product) => {
+    const category = product.category;
+    if (!category) return;
+
+    const id = category._id || category.id || category.slug || category.name;
+    if (!id) return;
+
+    const existing = categoryMap.get(id);
+    categoryMap.set(id, {
+      ...(typeof category === 'object' ? category : { name: category }),
+      _id: category._id || category.id || id,
+      productsCount: (existing?.productsCount || 0) + 1,
+    });
+  });
+
+  return {
+    ...response,
+    data: {
+      ...response.data,
+      data: Array.from(categoryMap.values()),
+      categories: Array.from(categoryMap.values()),
+    },
+  };
+};
+
 const findPublicProduct = async (identifier) => {
   const limit = 100;
   let page = 1;
@@ -196,16 +226,7 @@ export const productsAPI = {
   // The public product controller is protected on the live API, while search is public.
   // Use search for browsing and fall back to it for details so PLP/PDP work without auth.
   getAll: (params = {}) => getPublicProducts(params),
-  getOne: async (slug) => {
-    try {
-      return await api.get(`/product/${slug}`);
-    } catch (error) {
-      if ([401, 403, 404].includes(error.response?.status)) {
-        return findPublicProduct(slug);
-      }
-      throw error;
-    }
-  },
+  getOne: (slug) => findPublicProduct(slug),
   getTrending: () => api.get('/product/trending'),
   getNewArrivals: () => api.get('/product/new-arrivals'),
   getByBrand: (brandId) => 
@@ -265,7 +286,7 @@ export const adminAPI = {
 };
 
 export const categoriesAPI = {
-  getAll: () => api.get('/category'),
+  getAll: () => getPublicCategories(),
   getOne: (id) => api.get(`/category/${id}`),
 };
 
