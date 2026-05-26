@@ -53,7 +53,7 @@
 BrandHive/
 ├── client/                 # React Frontend
 │   ├── src/
-│   │   ├── components/     # Navbar, Footer, ProductCard, BrandCard
+│   │   ├── components/     # Navbar, Footer, ProductCard, BrandCard, OtpInput
 │   │   ├── context/        # AuthContext, CartContext, WishlistContext
 │   │   ├── data/           # Mock data (products, brands, categories)
 │   │   ├── pages/          # All page components
@@ -125,11 +125,48 @@ CLIENT_URL=http://localhost:5173
 | Cart | `/cart` | Cart + checkout flow |
 | Login | `/login` | Authentication |
 | Register | `/register` | Sign up |
+| Verify | `/verify` | Email OTP verification after registration |
+| Forgot Password | `/forgot-password` | Request a password reset code |
+| Reset Password | `/reset-password` | Enter code and set new password |
 | Sell | `/sell` | Seller registration |
 | Account | `/account` | Customer dashboard |
 | Seller | `/seller/dashboard` | Seller analytics |
 | Admin | `/admin/dashboard` | Admin console |
 | Chat | `/chat` | Support chat |
+
+## 👤 User Roles
+
+| Role | How Assigned | Notes |
+|------|-------------|-------|
+| `customer` | Default on registration | All new accounts start here — no role selection at sign-up |
+| `seller` | Auto-upgraded after brand creation | `upgradeToSeller()` in `AuthContext` fires on successful brand submission |
+| `admin` | Manually assigned in DB | Full platform management access |
+
+> Role selection was removed from the registration page. Users who want to sell complete the **Seller Registration** flow (`/sell`) which automatically promotes them to `seller` upon submission.
+
+## 🔌 API Integration
+
+Base URL: `https://brandhive-apis-production.up.railway.app`
+
+### Auth Endpoints (`authAPI`)
+
+| Function | Method | Endpoint | Body |
+|----------|--------|----------|------|
+| `register` | POST | `/auth/register` | `{ name, email, password }` |
+| `login` | POST | `/auth/login` | `{ email, password }` |
+| `getMe` | GET | `/auth/me` | — (JWT required) |
+| `verifyAccount` | POST | `/auth/confirm-email` | `{ email, otp }` |
+| `resendOtp` | POST | `/auth/resend-otp` | `{ email }` |
+| `forgotPassword` | POST | `/auth/forgot-password` | `{ email }` |
+| `resetPassword` | POST | `/auth/reset-password` | `{ email, code, newPassword }` |
+| `resendResetCode` | POST | `/auth/resend-otp` | `{ email }` |
+
+## 🧩 Key Reusable Components
+
+| Component | Path | Props | Notes |
+|-----------|------|-------|-------|
+| `OtpInput` | `src/components/OtpInput.jsx` | `value`, `onChange`, `error`, `disabled` | 6-digit OTP with auto-advance, backspace, paste support. Used in `VerifyPage` and `ResetPasswordPage`. |
+
 
 ## 🎨 Design System
 
@@ -147,3 +184,27 @@ CLIENT_URL=http://localhost:5173
 
 ---
 🇪🇬 **Made in Egypt** · BrandHive Inc. © 2025
+
+## 📝 Change Log
+
+| Date | Change |
+|------|--------|
+| 2026-05-13 | Fixed login redirect bug — initAuth now only clears session on 401, not on 404 or network errors |
+| 2026-05-04 | Fixed forgot/reset password endpoint URLs to match actual backend routes: `/auth/forget-password` and `/auth/verify-account` |
+| 2026-05-04 | Temporarily mapped `forgotPassword` to `/auth/resend-otp` pending backend implementation of `/auth/forget-password`; added friendly 404/"Cannot POST" error message in `ForgotPasswordPage` |
+| 2026-05-04 | Added `ForgotPasswordPage` (`/forgot-password`) and `ResetPasswordPage` (`/reset-password`) with full OTP + password reset flow |
+| 2026-05-04 | Extracted `OtpInput` as reusable component (`src/components/OtpInput.jsx`); updated `VerifyPage` to use it |
+| 2026-05-04 | Added `forgotPassword`, `resetPassword`, `resendResetCode` to `authAPI` in `api.js` |
+| 2026-05-04 | Added "Forgot Password?" link to `LoginPage` password field |
+| 2026-04-26 | Removed role selection (Buyer/Seller toggle) from `RegisterPage.jsx`; all new users default to `customer` |
+| 2026-04-26 | Added `upgradeToSeller()` to `AuthContext` — updates in-memory state and localStorage in real time |
+| 2026-04-26 | `SellerRegistration.jsx` now calls `upgradeToSeller()` on brand submission instead of manually patching the user object |
+| 2026-05-19 | Fixed `SettingsPanel` dark mode toggle overflow bug — removed isRTL conditional on translate-x, anchored knob at left-0.5, added flex-shrink-0 |
+| 2026-05-19 | Fixed language flags in `SettingsPanel` — replaced unreliable emoji flags with styled JSX divs (EN / ع badges) and added sublabel row |
+| 2026-05-19 | Removed dark mode toggle (Moon/Sun button) from `Navbar` — theme now controlled exclusively via `SettingsPanel` |
+| 2026-05-19 | Removed EN/AR language toggle from `Navbar` mobile menu — language now controlled exclusively via `SettingsPanel` |
+| 2026-05-19 | Fixed `/review` endpoint to `/reviews` in `api.js` `reviewsAPI` |
+| 2026-05-19 | Added missing `sellerAPI` and `adminAPI` endpoints in `api.js` for full dashboard functionality |
+| 2026-05-19 | Replaced "Coming Soon" placeholders in `SellerDashboard` with functional components (`SellerOrdersTab`, `SellerRevenueTab`, `SellerReviewsTab`, `SellerBazaarTab`, `SellerProductsTab`) |
+| 2026-05-19 | Replaced "Coming Soon" placeholders in `AdminDashboard` with functional components (`AdminUsersTab`, `AdminOrdersTab`, `AdminProductsTab`) |
+| 2026-05-19 | Replaced "Coming Soon" placeholder in `UserDashboard` with `NotificationsTab` and updated Payment tab UI |

@@ -9,6 +9,37 @@
     <meta property="og:title" content="BrandHive - Egypt's Local Marketplace" />
     <meta property="og:description" content="Discover 12,000+ verified Egyptian local brands. Shop handmade, fashion, jewelry, and more." />
     <title>BrandHive — Egypt's Local Marketplace 🇪🇬</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+      // Prevent dark mode flash
+      (function() {
+        try {
+          var theme = localStorage.getItem('brandhive_theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (theme === 'dark' || (!theme && prefersDark)) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch(e) {}
+      })();
+    </script>
+    <script>
+      // Prevent RTL flash
+      (function() {
+        try {
+          var lang = localStorage.getItem('brandhive_lang');
+          if (lang === 'ar') {
+            document.documentElement.dir = 'rtl';
+            document.documentElement.lang = 'ar';
+            document.documentElement.classList.add('rtl');
+          } else {
+            document.documentElement.dir = 'ltr';
+            document.documentElement.lang = 'en';
+          }
+        } catch(e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

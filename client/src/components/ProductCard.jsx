@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
-import { Heart, Star, ShoppingCart, MapPin, Sparkles } from 'lucide-react';
+import { Heart, Star, ShoppingCart, MapPin } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/CartContext';
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import toast from 'react-hot-toast';
 
 const CATEGORY_COLORS = {
@@ -31,6 +33,8 @@ const CATEGORY_ICONS = {
 };
 
 export default function ProductCard({ product, size = 'md' }) {
+  const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const wishlisted = isInWishlist(product.id);
@@ -42,9 +46,9 @@ export default function ProductCard({ product, size = 'md' }) {
     e.preventDefault();
     e.stopPropagation();
     addToCart(product, 1, { size: product.sizes?.[0], color: product.colors?.[0] });
-    toast.success(`${product.name} added to cart!`, {
+    toast.success(isRTL ? `تم إضافة ${product.name} إلى السلة!` : `${product.name} added to cart!`, {
       icon: '🛒',
-      style: { borderRadius: '12px', fontFamily: 'Inter' },
+      style: { borderRadius: '12px', fontFamily: isRTL ? 'Cairo' : 'Inter' },
     });
   };
 
@@ -52,9 +56,12 @@ export default function ProductCard({ product, size = 'md' }) {
     e.preventDefault();
     e.stopPropagation();
     toggleWishlist(product);
-    toast.success(wishlisted ? 'Removed from wishlist' : 'Added to wishlist!', {
+    const msg = wishlisted 
+      ? (isRTL ? 'تمت الإزالة من المفضلة' : 'Removed from wishlist')
+      : (isRTL ? 'تمت الإضافة إلى المفضلة!' : 'Added to wishlist!');
+    toast.success(msg, {
       icon: wishlisted ? '💔' : '❤️',
-      style: { borderRadius: '12px', fontFamily: 'Inter' },
+      style: { borderRadius: '12px', fontFamily: isRTL ? 'Cairo' : 'Inter' },
     });
   };
 
@@ -63,16 +70,32 @@ export default function ProductCard({ product, size = 'md' }) {
   return (
     <Link to={`/product/${product.slug}`} className="card-product block">
       {/* Image */}
-      <div className={`relative product-img ${isSmall ? 'h-40' : 'h-52 md:h-60'} bg-gradient-to-br ${bgGradient} flex items-center justify-center`}>
-        <span className={`${isSmall ? 'text-4xl' : 'text-6xl'} opacity-60`}>{icon}</span>
+      <div className={`relative product-img ${isSmall ? 'h-40' : 'h-52 md:h-60'} bg-gradient-to-br ${bgGradient} flex items-center justify-center overflow-hidden`}>
+        {product.image ? (
+          <img
+            src={product.image}
+            alt={product.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+        ) : null}
+        <div 
+          className={`${product.image ? 'hidden' : 'flex'} 
+            w-full h-full items-center justify-center`}
+        >
+          <span className={`${isSmall ? 'text-4xl' : 'text-6xl'} opacity-60`}>{icon}</span>
+        </div>
 
         {/* Badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
+        <div className={`absolute top-2 ${isRTL ? 'right-2' : 'left-2'} flex flex-col gap-1`}>
           {product.discount > 0 && (
             <span className="badge-sale">-{product.discount}%</span>
           )}
           {product.isNew && (
-            <span className="badge-new">NEW</span>
+            <span className="badge-new">{isRTL ? 'جديد' : 'NEW'}</span>
           )}
           {product.isFeatured && !product.discount && !product.isNew && (
             <span className="badge-featured">★</span>
@@ -82,7 +105,7 @@ export default function ProductCard({ product, size = 'md' }) {
         {/* Wishlist Button */}
         <button
           onClick={handleWishlist}
-          className={`absolute top-2 right-2 p-1.5 rounded-full transition-all ${
+          className={`absolute top-2 ${isRTL ? 'left-2' : 'right-2'} p-1.5 rounded-full transition-all ${
             wishlisted
               ? 'bg-red-500 text-white shadow-md scale-110'
               : 'bg-white/90 text-gray-500 hover:bg-white hover:text-red-500 shadow-sm'
@@ -98,60 +121,62 @@ export default function ProductCard({ product, size = 'md' }) {
             className="w-full flex items-center justify-center gap-2 py-2 bg-brand-navy text-white text-xs font-semibold rounded-xl hover:bg-opacity-90 transition-colors"
           >
             <ShoppingCart size={12} />
-            Quick Add
+            {t('products.addToCart')}
           </button>
         </div>
       </div>
 
       {/* Info */}
-      <div className={`p-3 ${isSmall ? '' : 'p-4'}`}>
+      <div className={`p-3 ${isSmall ? '' : 'p-4'} ${isRTL ? 'text-right' : 'text-left'}`}>
         {/* Brand */}
-        <div className="flex items-center gap-1 mb-1">
+        <div className={`flex items-center gap-1 mb-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <span className={`text-brand-gold text-xs font-semibold truncate`}>{product.brandName}</span>
           {product.verified && <span className="text-emerald-500 text-xs">✓</span>}
         </div>
 
         {/* Name */}
-        <h3 className={`font-semibold text-gray-900 line-clamp-2 leading-tight mb-2 ${isSmall ? 'text-xs' : 'text-sm'}`}>
+        <h3 className={`font-semibold text-gray-900 dark:text-dark-text line-clamp-2 leading-tight mb-2 ${isSmall ? 'text-xs' : 'text-sm'}`}>
           {product.name}
         </h3>
 
         {/* Rating */}
-        <div className="flex items-center gap-1 mb-2">
+        <div className={`flex items-center gap-1 mb-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <div className="flex">
             {[...Array(5)].map((_, i) => (
               <Star
                 key={i}
                 size={10}
-                className={i < Math.floor(product.rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}
+                className={i < Math.floor(product.rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-300 dark:text-gray-600'}
               />
             ))}
           </div>
-          <span className="text-xs text-gray-500">({product.reviews})</span>
+          <span className="text-xs text-gray-500 dark:text-dark-muted">({product.reviews})</span>
         </div>
 
         {/* Price */}
-        <div className="flex items-center justify-between">
-          <div>
-            <span className={`font-bold text-brand-navy ${isSmall ? 'text-sm' : 'text-base'}`}>
-              {product.price.toLocaleString()} EGP
+        <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+          <div className={isRTL ? 'text-right' : 'text-left'}>
+            <span className={`font-bold text-brand-navy dark:text-brand-gold ${isSmall ? 'text-sm' : 'text-base'}`}>
+              {product.price.toLocaleString()} {t('common.egp')}
             </span>
             {product.originalPrice && (
-              <span className="text-xs text-gray-400 line-through ml-1">
+              <span className={`text-xs text-gray-400 dark:text-dark-muted line-through ${isRTL ? 'mr-1' : 'ml-1'}`}>
                 {product.originalPrice.toLocaleString()}
               </span>
             )}
           </div>
           {product.freeShipping && (
-            <span className="text-xs text-emerald-600 font-medium">Free ship</span>
+            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+              {isRTL ? 'شحن مجاني' : 'Free ship'}
+            </span>
           )}
         </div>
 
         {/* Governorate */}
         {!isSmall && (
-          <div className="flex items-center gap-1 mt-1.5">
-            <MapPin size={10} className="text-gray-400" />
-            <span className="text-xs text-gray-400">{product.governorate}</span>
+          <div className={`flex items-center gap-1 mt-1.5 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <MapPin size={10} className="text-gray-400 dark:text-dark-muted" />
+            <span className="text-xs text-gray-400 dark:text-dark-muted">{product.governorate}</span>
           </div>
         )}
       </div>

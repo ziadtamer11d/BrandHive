@@ -9,6 +9,9 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    transition: background-color 0.2s ease, 
+                color 0.2s ease, 
+                border-color 0.2s ease;
   }
 
   html {
@@ -17,8 +20,8 @@
 
   body {
     font-family: 'Inter', system-ui, sans-serif;
-    background-color: #FAF8F4;
-    color: #0F172A;
+    @apply bg-brand-cream text-brand-dark transition-colors duration-200;
+    @apply dark:bg-dark-bg dark:text-dark-text;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
   }
@@ -32,6 +35,7 @@
   /* Buttons */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-brand-navy text-white font-semibold rounded-xl transition-all duration-200 hover:bg-opacity-90 hover:shadow-card-hover active:scale-95 font-body;
+    @apply dark:bg-brand-gold dark:text-brand-navy dark:hover:bg-brand-gold-light;
   }
 
   .btn-gold {
@@ -40,37 +44,45 @@
 
   .btn-outline {
     @apply inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-brand-navy text-brand-navy font-semibold rounded-xl transition-all duration-200 hover:bg-brand-navy hover:text-white active:scale-95 font-body;
+    @apply dark:border-brand-gold dark:text-brand-gold dark:hover:bg-brand-gold dark:hover:text-brand-navy;
   }
 
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-brand-navy font-medium rounded-lg transition-all duration-200 hover:bg-brand-navy/10 active:scale-95 font-body;
+    @apply dark:text-brand-gold dark:hover:bg-brand-gold/10;
   }
 
   /* Cards */
   .card {
     @apply bg-white rounded-2xl shadow-card overflow-hidden transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1;
+    @apply dark:bg-dark-surface dark:shadow-none dark:border dark:border-dark-border;
   }
 
   .card-product {
     @apply bg-white rounded-2xl shadow-card overflow-hidden transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 cursor-pointer;
+    @apply dark:bg-dark-surface dark:shadow-none dark:border dark:border-dark-border;
   }
 
   .card-brand {
     @apply bg-white rounded-2xl shadow-card p-6 transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1;
+    @apply dark:bg-dark-surface dark:shadow-none dark:border dark:border-dark-border;
   }
 
   /* Input fields */
   .input-field {
     @apply w-full px-4 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-navy/20 focus:border-brand-navy transition-all duration-200 font-body;
+    @apply dark:bg-dark-surface dark:border-dark-border dark:text-dark-text dark:placeholder-dark-muted dark:focus:ring-brand-gold/20 dark:focus:border-brand-gold;
   }
 
   .input-label {
     @apply block text-sm font-semibold text-gray-700 mb-1.5 font-body;
+    @apply dark:text-dark-text;
   }
 
   /* Badges */
   .badge-verified {
     @apply inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full border border-emerald-200;
+    @apply dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20;
   }
 
   .badge-sale {
@@ -79,28 +91,34 @@
 
   .badge-new {
     @apply inline-flex items-center px-2 py-0.5 bg-brand-navy text-white text-xs font-bold rounded-full;
+    @apply dark:bg-brand-gold dark:text-brand-navy;
   }
 
   .badge-featured {
     @apply inline-flex items-center px-2 py-0.5 bg-brand-gold text-white text-xs font-bold rounded-full;
+    @apply dark:bg-brand-gold dark:text-brand-navy;
   }
 
   /* Section heading */
   .section-heading {
     @apply text-3xl md:text-4xl font-display font-bold text-brand-navy;
+    @apply dark:text-white;
   }
 
   .section-subheading {
     @apply text-gray-500 mt-2 font-body;
+    @apply dark:text-dark-muted;
   }
 
   /* Nav link */
   .nav-link {
     @apply text-gray-700 font-medium hover:text-brand-navy transition-colors duration-200 font-body;
+    @apply dark:text-dark-muted dark:hover:text-brand-gold;
   }
 
   .nav-link-active {
     @apply text-brand-navy font-semibold font-body;
+    @apply dark:text-brand-gold;
   }
 
   /* Star rating */
@@ -114,19 +132,19 @@
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    @apply bg-gray-100 dark:bg-dark-bg;
   }
   ::-webkit-scrollbar-thumb {
-    background: #C8922A;
-    border-radius: 3px;
+    @apply bg-brand-gold rounded-full;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #A67520;
+    @apply bg-brand-gold-light;
   }
 
   /* Product image container */
   .product-img {
     @apply aspect-square overflow-hidden bg-gray-50;
+    @apply dark:bg-dark-bg;
   }
 
   /* Page container */
@@ -137,15 +155,18 @@
   /* Sidebar */
   .sidebar-item {
     @apply flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-brand-navy/5 hover:text-brand-navy font-medium transition-all duration-200 cursor-pointer font-body;
+    @apply dark:text-dark-muted dark:hover:bg-dark-surface dark:hover:text-brand-gold;
   }
 
   .sidebar-item-active {
     @apply flex items-center gap-3 px-4 py-3 rounded-xl bg-brand-navy text-white font-semibold cursor-pointer font-body;
+    @apply dark:bg-brand-gold dark:text-brand-navy;
   }
 
   /* Skeleton loader */
   .skeleton {
     @apply animate-pulse bg-gray-200 rounded-lg;
+    @apply dark:bg-dark-surface;
   }
 }
 
@@ -172,17 +193,37 @@
     @apply bg-white/80 backdrop-blur-md border border-white/20;
   }
 
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
+}
 
-  .line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
+/* ===== RTL / Arabic overrides ===== */
+[dir="rtl"] body {
+  font-family: 'Cairo', 'Inter', system-ui, sans-serif;
+}
+
+[dir="rtl"] .font-display,
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3 {
+  font-family: 'Cairo', 'Playfair Display', Georgia, serif;
+}
+
+[dir="rtl"] .font-body {
+  font-family: 'Cairo', 'Inter', system-ui, sans-serif;
+}
+
+/* Flip directional icons in RTL */
+[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
+}
+
+/* Input text direction */
+[dir="rtl"] input,
+[dir="rtl"] textarea {
+  text-align: right;
+}
+
+/* Sidebar active item */
+[dir="rtl"] .sidebar-item-active {
+  border-right: 3px solid currentColor;
+  border-left: none;
 }

@@ -1,45 +1,117 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Star, Package, Users, CheckCircle2, MessageSquare, Heart, Share2, ArrowLeft, Truck, RotateCcw } from 'lucide-react';
+import { MapPin, Star, CheckCircle2, MessageSquare, Heart, Share2, ArrowLeft, Truck, RotateCcw } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
-import { brands, products } from '../data/mockData';
+import { productsAPI, brandsAPI } from '../services/api';
+import { mapProduct, mapBrand } from '../utils/mappers';
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../context/LanguageContext';
 import toast from 'react-hot-toast';
 
 export default function BrandPage() {
+  const { t } = useTranslation();
+  const { isRTL } = useLanguage();
   const { slug } = useParams();
-  const brand = brands.find(b => b.slug === slug);
+  
+  const [brand, setBrand] = useState(null);
+  const [brandProducts, setBrandProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Bazaar');
   const [following, setFollowing] = useState(false);
   const [sortBy, setSortBy] = useState('Best Match');
   const [filterCat, setFilterCat] = useState('All');
 
-  if (!brand) {
+  useEffect(() => {
+    const fetchBrand = async () => {
+      setLoading(true);
+      try {
+        const res = await brandsAPI.getOne(slug);
+        const raw = res.data?.data || res.data?.brand || res.data;
+        
+        if (raw) {
+          setBrand(mapBrand(raw));
+          // Fetch brand products
+          try {
+            const prodRes = await productsAPI.getByBrand(raw._id || raw.id);
+            const prods = prodRes.data?.data || [];
+            setBrandProducts(prods.map(mapProduct));
+          } catch {
+            setBrandProducts([]);
+          }
+        } else {
+          setBrand(null);
+        }
+      } catch {
+        setBrand(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBrand();
+  }, [slug]);
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🏪</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Brand not found</h2>
-          <Link to="/explore" className="btn-primary mt-4">Explore Brands</Link>
+      <div className="min-h-screen bg-brand-cream dark:bg-dark-bg">
+        <div className="max-w-7xl mx-auto px-4 py-8 animate-pulse">
+          <div className="flex flex-col md:flex-row gap-6 items-start mb-8">
+            <div className="w-20 h-20 rounded-3xl bg-gray-200 dark:bg-dark-surface" />
+            <div className="flex-1 space-y-3">
+              <div className="h-8 bg-gray-200 dark:bg-dark-surface rounded-xl w-1/3" />
+              <div className="h-4 bg-gray-200 dark:bg-dark-surface rounded-xl w-1/4" />
+              <div className="h-20 bg-gray-200 dark:bg-dark-surface rounded-xl" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-gray-200 dark:bg-dark-surface rounded-2xl h-64" />
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
-  const brandProducts = products.filter(p => p.brandId === brand.id);
-  const tabs = [`Bazaar (${brandProducts.length})`, `Reviews (${Math.floor(Math.random() * 300 + 100)})`, 'About', 'Policies'];
+  if (!brand) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-brand-cream dark:bg-dark-bg">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🏪</div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text mb-2">
+            {isRTL ? 'الماركة غير موجودة' : 'Brand not found'}
+          </h2>
+          <Link to="/explore" className="btn-primary mt-4 inline-block">
+            {isRTL ? 'استكشف الماركات' : 'Explore Brands'}
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Removing direct calculation
+  
+  const tabs = [
+    { id: 'Bazaar', label: isRTL ? `البازار (${brandProducts.length})` : `Bazaar (${brandProducts.length})` },
+    { id: 'Reviews', label: isRTL ? `التقييمات (${Math.floor(Math.random() * 300 + 100)})` : `Reviews (${Math.floor(Math.random() * 300 + 100)})` },
+    { id: 'About', label: isRTL ? 'عن الماركة' : 'About' },
+    { id: 'Policies', label: isRTL ? 'السياسات' : 'Policies' }
+  ];
 
   const handleFollow = () => {
     setFollowing(!following);
-    toast.success(following ? `Unfollowed ${brand.name}` : `Following ${brand.name}!`, {
+    const msg = isRTL 
+      ? (following ? `ألغيت متابعة ${brand.name}` : `أنت تتابع ${brand.name} الآن!`)
+      : (following ? `Unfollowed ${brand.name}` : `Following ${brand.name}!`);
+    toast.success(msg, {
       icon: following ? '💔' : '❤️',
-      style: { borderRadius: '12px' },
+      style: { borderRadius: '12px', fontFamily: isRTL ? 'Cairo' : 'Inter' },
     });
   };
 
   const handleMessage = () => {
-    toast('Opening chat with ' + brand.name, {
+    toast((isRTL ? 'فتح الدردشة مع ' : 'Opening chat with ') + brand.name, {
       icon: '💬',
-      style: { borderRadius: '12px' },
+      style: { borderRadius: '12px', fontFamily: isRTL ? 'Cairo' : 'Inter' },
     });
   };
 
@@ -52,91 +124,95 @@ export default function BrandPage() {
   });
 
   return (
-    <div className="min-h-screen bg-brand-cream">
+    <div className={`min-h-screen bg-brand-cream dark:bg-dark-bg transition-colors duration-200 ${isRTL ? 'text-right' : 'text-left'}`}>
       {/* Breadcrumb */}
-      <div className="bg-white border-b border-gray-100">
+      <div className="bg-white dark:bg-dark-surface border-b border-gray-100 dark:border-dark-border">
         <div className="page-container py-3">
-          <Link to="/explore" className="flex items-center gap-1 text-sm text-gray-500 hover:text-brand-navy transition-colors">
-            <ArrowLeft size={14} />
-            Back to Brands
+          <Link to="/explore" className={`flex items-center gap-1 text-sm text-gray-500 dark:text-dark-muted hover:text-brand-navy dark:hover:text-brand-gold transition-colors ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <ArrowLeft size={14} className={isRTL ? 'rotate-180' : ''} />
+            {isRTL ? 'العودة للماركات' : 'Back to Brands'}
           </Link>
         </div>
       </div>
 
       {/* Brand Header */}
-      <div className={`bg-gradient-to-r ${brand.coverColor || 'from-gray-100 to-gray-50'} border-b border-gray-200`}>
+      <div className={`bg-gradient-to-r ${brand.coverColor || 'from-gray-100 to-gray-50'} dark:from-dark-surface dark:to-dark-surface border-b border-gray-200 dark:border-dark-border`}>
         <div className="page-container py-8">
-          <div className="flex flex-col md:flex-row gap-6 items-start">
+          <div className={`flex flex-col md:flex-row gap-6 items-start ${isRTL ? 'md:flex-row-reverse' : ''}`}>
             {/* Brand Avatar */}
-            <div className={`w-20 h-20 rounded-3xl bg-gradient-to-br ${brand.color} flex items-center justify-center shadow-lg flex-shrink-0`}>
-              <span className="text-white font-bold text-3xl">{brand.initials}</span>
+            <div className={`w-20 h-20 rounded-3xl bg-gradient-to-br ${brand.color || 'from-brand-navy to-blue-800'} flex items-center justify-center shadow-lg flex-shrink-0 overflow-hidden`}>
+              {brand.logo ? (
+                <img src={brand.logo} alt={brand.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-white font-bold text-3xl">{brand.name?.[0]}</span>
+              )}
             </div>
 
             {/* Brand Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-3 mb-2">
-                <h1 className="text-3xl font-display font-bold text-gray-900">{brand.name}</h1>
+              <div className={`flex flex-wrap items-center gap-3 mb-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <h1 className="text-3xl font-display font-bold text-gray-900 dark:text-dark-text">{brand.name}</h1>
                 {brand.verified && (
-                  <span className="badge-verified text-sm">
-                    <CheckCircle2 size={13} /> Verified
+                  <span className={`badge-verified text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <CheckCircle2 size={13} /> {isRTL ? 'موثق' : 'Verified'}
                   </span>
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 mb-3">
-                <span className="flex items-center gap-1"><MapPin size={13} /> {brand.location}</span>
-                <span>· Member since {brand.memberSince}</span>
+              <div className={`flex flex-wrap items-center gap-3 text-sm text-gray-600 dark:text-dark-muted mb-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <span className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}><MapPin size={13} /> {brand.country}</span>
+                <span>· {isRTL ? 'عضو منذ' : 'Member since'} {brand.memberSince}</span>
               </div>
 
-              <div className="flex flex-wrap gap-2 mb-4">
-                {brand.tags.map(tag => (
-                  <span key={tag} className="px-3 py-1 bg-white/80 rounded-full text-xs font-medium text-gray-700">
+              <div className={`flex flex-wrap gap-2 mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                {brand.tags?.map(tag => (
+                  <span key={tag} className="px-3 py-1 bg-white/80 dark:bg-dark-bg/80 rounded-full text-xs font-medium text-gray-700 dark:text-dark-text">
                     {tag}
                   </span>
                 ))}
               </div>
 
-              <p className="text-gray-600 max-w-xl leading-relaxed">{brand.longDescription}</p>
+              <p className="text-gray-600 dark:text-dark-muted max-w-xl leading-relaxed">{isRTL && brand.arDescription ? brand.arDescription : brand.longDescription}</p>
             </div>
 
             {/* Stats + Actions */}
-            <div className="flex flex-col items-end gap-4">
-              <div className="grid grid-cols-4 gap-4 text-center">
+            <div className={`flex flex-col items-end gap-4 ${isRTL ? 'items-start' : 'items-end'}`}>
+              <div className={`grid grid-cols-4 gap-4 text-center ${isRTL ? 'flex-row-reverse' : ''}`}>
                 {[
-                  { value: brand.products, label: 'Products' },
-                  { value: brand.sales >= 1000 ? `${(brand.sales/1000).toFixed(1)}K` : brand.sales, label: 'Sales' },
-                  { value: `${brand.rating}★`, label: 'Rating' },
-                  { value: brand.followers >= 1000 ? `${(brand.followers/1000).toFixed(1)}K` : brand.followers, label: 'Followers' },
+                  { value: brand.productCount, label: isRTL ? 'منتجات' : 'Products' },
+                  { value: brand.sales >= 1000 ? `${(brand.sales/1000).toFixed(1)}K` : (brand.sales || 0), label: isRTL ? 'مبيعات' : 'Sales' },
+                  { value: `${brand.rating}★`, label: isRTL ? 'تقييم' : 'Rating' },
+                  { value: brand.followers >= 1000 ? `${(brand.followers/1000).toFixed(1)}K` : brand.followers, label: isRTL ? 'متابعون' : 'Followers' },
                 ].map(stat => (
-                  <div key={stat.label} className="bg-white rounded-2xl px-4 py-3 shadow-sm">
-                    <div className="text-lg font-bold text-brand-navy">{stat.value}</div>
-                    <div className="text-xs text-gray-500">{stat.label}</div>
+                  <div key={stat.label} className="bg-white dark:bg-dark-surface rounded-2xl px-4 py-3 shadow-sm dark:border dark:border-dark-border min-w-[70px]">
+                    <div className="text-lg font-bold text-brand-navy dark:text-brand-gold">{stat.value}</div>
+                    <div className="text-[10px] text-gray-500 dark:text-dark-muted uppercase font-semibold">{stat.label}</div>
                   </div>
                 ))}
               </div>
 
-              <div className="flex gap-2">
-                <button onClick={handleFollow} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+              <div className={`flex gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <button onClick={handleFollow} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${isRTL ? 'flex-row-reverse' : ''} ${
                   following
-                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    : 'bg-brand-navy text-white hover:bg-opacity-90'
+                    ? 'bg-gray-100 dark:bg-dark-bg text-gray-700 dark:text-dark-text hover:bg-gray-200 dark:hover:bg-dark-surface'
+                    : 'bg-brand-navy dark:bg-brand-gold text-white dark:text-brand-navy hover:bg-opacity-90'
                 }`}>
                   <Heart size={15} fill={following ? 'currentColor' : 'none'} className={following ? 'text-red-500' : ''} />
-                  {following ? 'Following' : '+ Follow'}
+                  {following ? (isRTL ? 'متابع' : 'Following') : (isRTL ? '+ متابعة' : '+ Follow')}
                 </button>
-                <button onClick={handleMessage} className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm border-2 border-gray-200 hover:border-brand-navy text-gray-700 hover:text-brand-navy transition-all">
+                <button onClick={handleMessage} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm border-2 border-gray-200 dark:border-dark-border hover:border-brand-navy dark:hover:border-brand-gold text-gray-700 dark:text-dark-text hover:text-brand-navy dark:hover:text-brand-navy transition-all ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <MessageSquare size={15} />
-                  Message
+                  {isRTL ? 'رسالة' : 'Message'}
                 </button>
-                <button className="p-2.5 rounded-xl border-2 border-gray-200 hover:border-brand-navy text-gray-500 hover:text-brand-navy transition-all">
+                <button className="p-2.5 rounded-xl border-2 border-gray-200 dark:border-dark-border hover:border-brand-navy dark:hover:border-brand-gold text-gray-500 dark:text-dark-muted hover:text-brand-navy dark:hover:text-brand-navy transition-all">
                   <Share2 size={15} />
                 </button>
               </div>
 
               {/* Shipping info */}
-              <div className="flex gap-4 text-xs text-gray-500">
-                <span className="flex items-center gap-1"><Truck size={12} /> {brand.shipping}</span>
-                <span className="flex items-center gap-1"><RotateCcw size={12} /> {brand.returns}</span>
+              <div className={`flex gap-4 text-xs text-gray-500 dark:text-dark-muted ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <span className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}><Truck size={12} /> {isRTL ? 'توصيل:' : 'Shipping:'} {brand.shipping}</span>
+                <span className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}><RotateCcw size={12} /> {isRTL ? 'استرجاع:' : 'Returns:'} {brand.returns}</span>
               </div>
             </div>
           </div>
@@ -144,21 +220,20 @@ export default function BrandPage() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white border-b border-gray-200 sticky top-16 z-30">
+      <div className="bg-white dark:bg-dark-surface border-b border-gray-200 dark:border-dark-border sticky top-16 z-30">
         <div className="page-container">
-          <div className="flex gap-1 overflow-x-auto">
+          <div className={`flex gap-1 overflow-x-auto ${isRTL ? 'flex-row-reverse' : ''}`}>
             {tabs.map(tab => {
-              const tabKey = tab.split(' ')[0];
-              const isActive = activeTab === tabKey;
+              const isActive = activeTab === tab.id;
               return (
                 <button
-                  key={tab}
-                  onClick={() => setActiveTab(tabKey)}
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
                   className={`px-4 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                    isActive ? 'border-brand-navy text-brand-navy' : 'border-transparent text-gray-500 hover:text-gray-900'
+                    isActive ? 'border-brand-navy dark:border-brand-gold text-brand-navy dark:text-brand-gold' : 'border-transparent text-gray-500 dark:text-dark-muted hover:text-gray-900 dark:hover:text-dark-text'
                   }`}
                 >
-                  {tab}
+                  {tab.label}
                 </button>
               );
             })}
@@ -171,29 +246,34 @@ export default function BrandPage() {
         {activeTab === 'Bazaar' && (
           <div>
             {/* Filters bar */}
-            <div className="flex flex-wrap items-center gap-3 mb-6">
-              {['All', 'On Sale', 'New Arrivals', 'Customizable'].map(f => (
+            <div className={`flex flex-wrap items-center gap-3 mb-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              {[
+                { id: 'All', label: isRTL ? 'الكل' : 'All' },
+                { id: 'On Sale', label: isRTL ? 'عروض' : 'On Sale' },
+                { id: 'New Arrivals', label: isRTL ? 'وصل حديثاً' : 'New Arrivals' },
+                { id: 'Customizable', label: isRTL ? 'قابل للتخصيص' : 'Customizable' }
+              ].map(f => (
                 <button
-                  key={f}
-                  onClick={() => setFilterCat(f)}
+                  key={f.id}
+                  onClick={() => setFilterCat(f.id)}
                   className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                    filterCat === f ? 'bg-brand-navy text-white' : 'bg-white text-gray-600 hover:bg-gray-50 shadow-sm'
+                    filterCat === f.id ? 'bg-brand-navy dark:bg-brand-gold text-white dark:text-brand-navy' : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-dark-text hover:bg-gray-50 dark:hover:bg-dark-bg shadow-sm'
                   }`}
                 >
-                  {f}
+                  {f.label}
                 </button>
               ))}
-              <div className="ml-auto">
+              <div className={isRTL ? 'mr-auto ml-0' : 'ml-auto mr-0'}>
                 <select
                   value={sortBy}
                   onChange={e => setSortBy(e.target.value)}
-                  className="input-field py-2 text-sm w-40"
+                  className={`input-field py-2 text-sm w-40 ${isRTL ? 'text-right' : ''}`}
                 >
-                  <option>Best Match</option>
-                  <option>Price: Low to High</option>
-                  <option>Price: High to Low</option>
-                  <option>Top Rated</option>
-                  <option>Newest</option>
+                  <option value="Best Match">{isRTL ? 'الأكثر مطابقة' : 'Best Match'}</option>
+                  <option value="Price: Low to High">{isRTL ? 'السعر: من الأقل للأعلى' : 'Price: Low to High'}</option>
+                  <option value="Price: High to Low">{isRTL ? 'السعر: من الأعلى للأقل' : 'Price: High to Low'}</option>
+                  <option value="Top Rated">{isRTL ? 'الأعلى تقييماً' : 'Top Rated'}</option>
+                  <option value="Newest">{isRTL ? 'الأحدث' : 'Newest'}</option>
                 </select>
               </div>
             </div>
@@ -201,10 +281,12 @@ export default function BrandPage() {
             {filteredProducts.length === 0 ? (
               <div className="text-center py-16">
                 <div className="text-5xl mb-4">📦</div>
-                <p className="text-gray-500">No products match these filters</p>
+                <p className="text-gray-500 dark:text-dark-muted">
+                  {isRTL ? 'لا توجد منتجات تطابق هذه الفلاتر' : 'No products match these filters'}
+                </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 {filteredProducts.map(product => (
                   <ProductCard key={product.id} product={product} />
                 ))}
@@ -215,24 +297,24 @@ export default function BrandPage() {
 
         {/* Reviews Tab */}
         {activeTab === 'Reviews' && (
-          <div className="max-w-2xl">
-            <div className="bg-white rounded-2xl shadow-card p-6 mb-6">
-              <div className="flex items-center gap-6">
+          <div className={`max-w-2xl ${isRTL ? 'mr-0' : ''}`}>
+            <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-card dark:shadow-none dark:border dark:border-dark-border p-6 mb-6">
+              <div className={`flex items-center gap-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <div className="text-center">
-                  <div className="text-5xl font-display font-bold text-brand-navy">{brand.rating}</div>
+                  <div className="text-5xl font-display font-bold text-brand-navy dark:text-brand-gold">{brand.rating}</div>
                   <div className="flex justify-center my-1">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={16} className={i < Math.floor(brand.rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-300'} />
+                      <Star key={i} size={16} className={i < Math.floor(brand.rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-300 dark:text-gray-600'} />
                     ))}
                   </div>
-                  <div className="text-sm text-gray-500">Overall Rating</div>
+                  <div className="text-sm text-gray-500 dark:text-dark-muted">{isRTL ? 'التقييم العام' : 'Overall Rating'}</div>
                 </div>
                 <div className="flex-1 space-y-2">
                   {[5, 4, 3, 2, 1].map(star => (
-                    <div key={star} className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500 w-4">{star}</span>
+                    <div key={star} className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <span className="text-xs text-gray-500 dark:text-dark-muted w-4">{star}</span>
                       <Star size={11} className="text-amber-400 fill-amber-400" />
-                      <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="flex-1 h-2 bg-gray-100 dark:bg-dark-bg rounded-full overflow-hidden">
                         <div
                           className="h-full bg-amber-400 rounded-full"
                           style={{ width: star === 5 ? '70%' : star === 4 ? '20%' : star === 3 ? '7%' : '2%' }}
@@ -245,23 +327,25 @@ export default function BrandPage() {
             </div>
 
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl shadow-card p-5 mb-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 rounded-full bg-brand-navy flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">{['N', 'A', 'S'][i]}</span>
+              <div key={i} className={`bg-white dark:bg-dark-surface rounded-2xl shadow-card dark:shadow-none dark:border dark:border-dark-border p-5 mb-4 ${isRTL ? 'text-right' : ''}`}>
+                <div className={`flex items-center gap-3 mb-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <div className="w-9 h-9 rounded-full bg-brand-navy dark:bg-brand-gold flex items-center justify-center">
+                    <span className="text-white dark:text-brand-navy text-sm font-bold">{['N', 'A', 'S'][i]}</span>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">{['Nadia M.', 'Ahmed K.', 'Sara H.'][i]}</p>
-                    <div className="flex">
+                  <div className={isRTL ? 'text-right' : ''}>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-dark-text">{isRTL ? ['نادية م.', 'أحمد ك.', 'سارة هـ.'][i] : ['Nadia M.', 'Ahmed K.', 'Sara H.'][i]}</p>
+                    <div className={`flex ${isRTL ? 'flex-row-reverse' : ''}`}>
                       {[...Array(5)].map((_, j) => (
                         <Star key={j} size={10} className="text-amber-400 fill-amber-400" />
                       ))}
                     </div>
                   </div>
-                  <span className="ml-auto text-xs text-gray-400">Mar 2025</span>
+                  <span className={`${isRTL ? 'mr-auto ml-0' : 'ml-auto mr-0'} text-xs text-gray-400 dark:text-dark-muted`}>
+                    {isRTL ? 'مارس 2025' : 'Mar 2025'}
+                  </span>
                 </div>
-                <p className="text-sm text-gray-700">
-                  {['Amazing quality! The craftsmanship is incredible.', 'Perfect gift, beautifully packaged and shipped fast!', 'Love every piece I bought from this brand. Will order again!'][i]}
+                <p className="text-sm text-gray-700 dark:text-dark-muted">
+                  {isRTL ? ['جودة رائعة! الحرفة مذهلة.', 'هدية مثالية، تغليف جميل وشحن سريع!', 'أحب كل قطعة اشتريتها من هذه الماركة. سأطلب مرة أخرى!'][i] : ['Amazing quality! The craftsmanship is incredible.', 'Perfect gift, beautifully packaged and shipped fast!', 'Love every piece I bought from this brand. Will order again!'][i]}
                 </p>
               </div>
             ))}
@@ -271,26 +355,28 @@ export default function BrandPage() {
         {/* About Tab */}
         {activeTab === 'About' && (
           <div className="max-w-2xl">
-            <div className="bg-white rounded-2xl shadow-card p-6">
-              <h3 className="text-xl font-display font-bold text-gray-900 mb-4">About {brand.name}</h3>
-              <p className="text-gray-700 leading-relaxed mb-6">{brand.longDescription}</p>
+            <div className={`bg-white dark:bg-dark-surface rounded-2xl shadow-card dark:shadow-none dark:border dark:border-dark-border p-6 ${isRTL ? 'text-right' : ''}`}>
+              <h3 className="text-xl font-display font-bold text-gray-900 dark:text-dark-text mb-4">
+                {isRTL ? `عن ${brand.name}` : `About ${brand.name}`}
+              </h3>
+              <p className="text-gray-700 dark:text-dark-muted leading-relaxed mb-6">{isRTL && brand.arDescription ? brand.arDescription : brand.longDescription}</p>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-brand-cream rounded-xl p-4">
-                  <p className="text-sm font-semibold text-gray-700">Location</p>
-                  <p className="text-gray-600 text-sm mt-1 flex items-center gap-1"><MapPin size={13} /> {brand.location}</p>
+              <div className={`grid grid-cols-2 gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <div className="bg-brand-cream dark:bg-dark-bg rounded-xl p-4">
+                  <p className="text-sm font-semibold text-gray-700 dark:text-dark-text">{isRTL ? 'الموقع' : 'Location'}</p>
+                  <p className={`text-gray-600 dark:text-dark-muted text-sm mt-1 flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}><MapPin size={13} /> {brand.country}</p>
                 </div>
-                <div className="bg-brand-cream rounded-xl p-4">
-                  <p className="text-sm font-semibold text-gray-700">Member Since</p>
-                  <p className="text-gray-600 text-sm mt-1">{brand.memberSince}</p>
+                <div className="bg-brand-cream dark:bg-dark-bg rounded-xl p-4">
+                  <p className="text-sm font-semibold text-gray-700 dark:text-dark-text">{isRTL ? 'عضو منذ' : 'Member Since'}</p>
+                  <p className="text-gray-600 dark:text-dark-muted text-sm mt-1">{brand.memberSince}</p>
                 </div>
-                <div className="bg-brand-cream rounded-xl p-4">
-                  <p className="text-sm font-semibold text-gray-700">Category</p>
-                  <p className="text-gray-600 text-sm mt-1">{brand.category}</p>
+                <div className="bg-brand-cream dark:bg-dark-bg rounded-xl p-4">
+                  <p className="text-sm font-semibold text-gray-700 dark:text-dark-text">{isRTL ? 'الفئة' : 'Category'}</p>
+                  <p className="text-gray-600 dark:text-dark-muted text-sm mt-1">{isRTL && brand.arCategory ? brand.arCategory : brand.category}</p>
                 </div>
-                <div className="bg-brand-cream rounded-xl p-4">
-                  <p className="text-sm font-semibold text-gray-700">Response Rate</p>
-                  <p className="text-gray-600 text-sm mt-1">98% within 24h</p>
+                <div className="bg-brand-cream dark:bg-dark-bg rounded-xl p-4">
+                  <p className="text-sm font-semibold text-gray-700 dark:text-dark-text">{isRTL ? 'سرعة الرد' : 'Response Rate'}</p>
+                  <p className="text-gray-600 dark:text-dark-muted text-sm mt-1">{isRTL ? '98% خلال 24 ساعة' : '98% within 24h'}</p>
                 </div>
               </div>
             </div>
@@ -300,20 +386,22 @@ export default function BrandPage() {
         {/* Policies Tab */}
         {activeTab === 'Policies' && (
           <div className="max-w-2xl">
-            <div className="bg-white rounded-2xl shadow-card p-6">
-              <h3 className="text-xl font-display font-bold text-gray-900 mb-6">Shop Policies</h3>
+            <div className={`bg-white dark:bg-dark-surface rounded-2xl shadow-card dark:shadow-none dark:border dark:border-dark-border p-6 ${isRTL ? 'text-right' : ''}`}>
+              <h3 className="text-xl font-display font-bold text-gray-900 dark:text-dark-text mb-6">
+                {isRTL ? 'سياسات المتجر' : 'Shop Policies'}
+              </h3>
               <div className="space-y-6">
                 {[
-                  { title: 'Shipping Policy', icon: '🚚', text: `Orders are processed within 1–2 business days. Estimated delivery: ${brand.shipping}. Free shipping on orders above 500 EGP.` },
-                  { title: 'Returns Policy', icon: '↩️', text: `${brand.returns} from delivery date. Items must be in original condition. Customized items are non-refundable.` },
-                  { title: 'Payment Methods', icon: '💳', text: 'We accept all major credit cards, Vodafone Cash, Fawry, and Cash on Delivery.' },
-                  { title: 'Customization', icon: '✨', text: 'Custom orders available for select products. Please message us before placing a custom order.' },
+                  { title: isRTL ? 'سياسة الشحن' : 'Shipping Policy', icon: '🚚', text: isRTL ? `يتم تجهيز الطلبات خلال 1-2 أيام عمل. التوصيل المتوقع: ${brand.shipping}. شحن مجاني للطلبات فوق 500 ج.م.` : `Orders are processed within 1–2 business days. Estimated delivery: ${brand.shipping}. Free shipping on orders above 500 EGP.` },
+                  { title: isRTL ? 'سياسة الاسترجاع' : 'Returns Policy', icon: '↩️', text: isRTL ? `${brand.returns} من تاريخ التوصيل. يجب أن تكون المنتجات بحالتها الأصلية. المنتجات المخصصة غير قابلة للاسترجاع.` : `${brand.returns} from delivery date. Items must be in original condition. Customized items are non-refundable.` },
+                  { title: isRTL ? 'طرق الدفع' : 'Payment Methods', icon: '💳', text: isRTL ? 'نقبل جميع البطاقات الائتمانية الرئيسية، فودافون كاش، فوري، والدفع عند الاستلام.' : 'We accept all major credit cards, Vodafone Cash, Fawry, and Cash on Delivery.' },
+                  { title: isRTL ? 'التخصيص' : 'Customization', icon: '✨', text: isRTL ? 'تتوفر طلبات التخصيص لبعض المنتجات. يرجى مراسلتنا قبل تقديم طلب مخصص.' : 'Custom orders available for select products. Please message us before placing a custom order.' },
                 ].map(p => (
-                  <div key={p.title} className="flex gap-4">
+                  <div key={p.title} className={`flex gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
                     <span className="text-2xl flex-shrink-0">{p.icon}</span>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-1">{p.title}</h4>
-                      <p className="text-sm text-gray-600 leading-relaxed">{p.text}</p>
+                    <div className={isRTL ? 'text-right' : ''}>
+                      <h4 className="font-semibold text-gray-900 dark:text-dark-text mb-1">{p.title}</h4>
+                      <p className="text-sm text-gray-600 dark:text-dark-muted leading-relaxed">{p.text}</p>
                     </div>
                   </div>
                 ))}

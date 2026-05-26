@@ -1,7 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { CartProvider, WishlistProvider } from './context/CartContext';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -14,6 +17,10 @@ import ProductPage from './pages/ProductPage';
 import CartPage from './pages/CartPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import VerifyPage from './pages/VerifyPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import VerifyResetPage from './pages/VerifyResetPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import SellerRegistration from './pages/SellerRegistration';
 import SupportChat from './pages/SupportChat';
 import UserDashboard from './pages/dashboards/UserDashboard';
@@ -38,6 +45,20 @@ function Layout({ children, noFooter = false }) {
   );
 }
 
+function NotFoundPage() {
+  const { t } = useTranslation();
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-brand-cream dark:bg-dark-bg">
+      <div className="text-center">
+        <div className="text-8xl mb-4">🐝</div>
+        <h1 className="text-4xl font-display font-bold text-brand-navy dark:text-white mb-2">{t('notFound.title')}</h1>
+        <p className="text-gray-500 dark:text-dark-muted mb-6">{t('notFound.message')}</p>
+        <a href="/" className="btn-primary">{t('notFound.backHome')}</a>
+      </div>
+    </div>
+  );
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -55,6 +76,10 @@ function AppRoutes() {
       {/* Auth */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify" element={<VerifyPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/verify-reset" element={<VerifyResetPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* Seller registration */}
       <Route path="/sell" element={<SellerRegistration />} />
@@ -90,43 +115,48 @@ function AppRoutes() {
       />
 
       {/* Fallback */}
-      <Route path="*" element={
-        <Layout>
-          <div className="min-h-screen flex items-center justify-center bg-brand-cream">
-            <div className="text-center">
-              <div className="text-8xl mb-4">🐝</div>
-              <h1 className="text-4xl font-display font-bold text-brand-navy mb-2">404</h1>
-              <p className="text-gray-500 mb-6">This page doesn't exist.</p>
-              <a href="/" className="btn-primary">Back to Home</a>
-            </div>
-          </div>
-        </Layout>
-      } />
+      <Route path="*" element={<Layout><NotFoundPage /></Layout>} />
     </Routes>
+  );
+}
+
+function AppWrapper() {
+  const { isDark } = useTheme();
+  const { isRTL } = useLanguage();
+  return (
+    <>
+      <AppRoutes />
+      <Toaster
+        position={isRTL ? 'top-left' : 'top-right'}
+        toastOptions={{
+          duration: 3000,
+          style: {
+            fontFamily: isRTL ? 'Cairo, Inter, sans-serif' : 'Inter, sans-serif',
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+            background: isDark ? '#1e293b' : '#ffffff',
+            color: isDark ? '#f8fafc' : '#1A2040',
+          },
+        }}
+      />
+    </>
   );
 }
 
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <CartProvider>
-          <WishlistProvider>
-            <AppRoutes />
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 3000,
-                style: {
-                  fontFamily: 'Inter, sans-serif',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
-                },
-              }}
-            />
-          </WishlistProvider>
-        </CartProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <AppWrapper />
+              </WishlistProvider>
+            </CartProvider>
+          </AuthProvider>
+        </LanguageProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

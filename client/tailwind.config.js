@@ -4,9 +4,17 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
+        dark: {
+          bg: '#0F172A',        // main dark background
+          surface: '#1E293B',   // cards, panels
+          border: '#334155',    // borders
+          text: '#F1F5F9',      // primary text
+          muted: '#94A3B8',     // secondary text
+        },
         brand: {
           navy: '#1A2040',
           gold: '#C8922A',

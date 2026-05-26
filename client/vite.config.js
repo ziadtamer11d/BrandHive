@@ -9,9 +9,11 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': {
-        target: 'http://localhost:5000',
+      '/brandhive-api': {
+        target: 'https://brandhive-apis-production.up.railway.app',
         changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/brandhive-api/, ''),
       }
     }
   }
