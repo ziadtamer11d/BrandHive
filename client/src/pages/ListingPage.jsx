@@ -230,7 +230,7 @@ export default function ListingPage() {
     }
 
     return result;
-  }, [searchParam, activeCategory, categoryParam,
+  }, [products, searchParam, activeCategory, categoryParam,
       priceMin, priceMax, selectedGovs, minRating, 
       filters, sort]);
 
